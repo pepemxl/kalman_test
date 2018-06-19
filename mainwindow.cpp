@@ -250,6 +250,69 @@ void MainWindow::test_kalman_01(){
     return;
 }
 
+/**
+ *  \brief El filtro de Kalman intenta estimar el estado $\mathbb{x}\in \mathbb{R}^{n}$ del
+ * sistema que es governado por la ecuación:
+ *                        $$x_{k}=Ax_{k-1}+Bu_{k}+w_{k-1}$$
+ * con medida
+ *                        $$z_{k}= Hx_{k}+v_{k}$$
+ * Donde $w_{k-1},v_{k}$ representan recpectivamente el ruido del proceso y de la medición.
+ * Se asume que tienen media 0, ruido blanco con matrices de covarianza Q y R.
+ * La matriz $A$ es llamada matriz de transición, y relaciona el estado actual con el estado previo,
+ * es decir, $x_{k} con x_{k-1}$, si no hay ruido presente.
+ * La matriz $A\in Math(n\times n)$.
+ * B es una matriz opcional que relaciona la entrada de control $u_{k}\in\mathbb{R}^{l}$ del estado
+ * $x_{k}$, en el caso de trackeo que usaremos por el momento no existe dicha variable de control,
+ * por lo cual todo el termino $Bu_{k}$ es retirado de la ecuación.
+ * La matriz $H\in Math(n\times l)$ relaciona la medición $z_{k}$ con el estado $x_{k}$.
+ *
+ * El filtro de kalman mantiene dos estimadores todo el tiempo:
+ * \begin{itemize}
+ *  \item $\hat{x}(k|k-1)$, estima el estado al tiempo $k$, dado que se conoce el proceso al tiempo
+ * $k-1$, es decir, es una estimación a priori del estado al tiempo $k$.
+ *  \item $\hat{x}(k|k)$, estima el proceso al tiempo $k$ dada la medición $z_{k}$, es decir,
+ * es una estimación a posteiori del estado al tiempo $k$.
+ * \end{itemize}
+ *
+ * Además mantiene dos matrices de covarianza del error del estado estimado:
+ * \begin{itemize}
+ *  \item $P(k|k-1)$, que es una estimación a priori de la covarianza del error de $\hat{x}(k|k-1)$.
+ *  \item $P(k|k)$, que es una estimación a posteriori de la covarianza del error de $\hat{x}(k|k)$.
+ * \end{itemize}
+ *
+ * Kalman es un estimador cuadratico medio recursivo de minimos, que opera en dos fases sobre
+ * cada paso de tiempo $k$.
+ * En la primer fase se predice el siguiente estado estimado $\hat{x}(k|k-1)$ usando el previo.
+ * En la segunda fase se encuentra la corrección del estimado usando la medición, para entonces
+ * obtener $\hat{x}(k|k)$.
+ *
+ * En un inicio se considera que $\hat{x}(1|1)$ y $P(1|1)$ son conocidos.
+ *
+ * Para mantener dichas estimaciones, se realizan las siguientes operaciones:
+ * 1.- Predicción del estado:
+ *                  $$\hat{x}(k|k-1) = A\cdot\hat{x}(k-1|k-1)$$
+ * 2.- Predicción de la covarianza del error:
+ *                  $$P(k|k-1) = A\cdot P(k-1|k-1)\cdot A^{T}+Q$$
+ *
+ * En el paso de correción:
+ * 3.- Se hace medición de la predicción:
+ *            $$\hat{z}(k|k-1) = H\cdot \hat{x}(k|k-1)$$
+ * 4.- Se calcula el residuo:
+ *            $$r_{k} = z_{k} - \hat{z}(k|k-1)$$
+ * 5.- Se hace la medición de la covarianza predicha:
+ *            $$S_{k} = H\cdot P(k|k-1)\cdot H^{T}+R$$
+ * 6.- Se calcula la ganancia de Kalman:
+ *            $$W_{k}=P(k|k-1)\cdot H^{T}\cdot S^{-1}$$
+ * 7.- Se actualiza el estado:
+ *            $$\hat{x}(k|k) = \hat{x}(k|k-1)+W_{k}r_{k}$$
+ * 8.- Se actualiza la covarianza del error:
+ *            $$P(k|k) = P(k|k-1)-W_{k}\cdot S_{k}\cdot W_{k}^{T}$$
+ *
+ * Ahora para inicializar el filtro de Kalman es necesario definir la matriz de transición $A$,
+ * la matriz de medición de estados $H$, las dos matrices de covarianza $R$ y $Q$, y en cada paso
+ * de tiempo alimentar al filtro con una medición $z_{k}$.
+ *
+*/
 
 void MainWindow::test_kalman_02(){
     std::cout << std::fixed;

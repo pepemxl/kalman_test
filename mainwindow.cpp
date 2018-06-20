@@ -311,7 +311,19 @@ void MainWindow::test_kalman_01(){
  * Ahora para inicializar el filtro de Kalman es necesario definir la matriz de transición $A$,
  * la matriz de medición de estados $H$, las dos matrices de covarianza $R$ y $Q$, y en cada paso
  * de tiempo alimentar al filtro con una medición $z_{k}$.
+ * La ventaja de este tipo de sistemas es que es facilmente intercambiable por otro estimador,
+ * como podria ser un filtro de particulas o un filtro extendido de Kalman.
  *
+ * Ahora para el problema de tracking definiremos POM(x,y) un Probabilistic Occupancy Map de la
+ * escena con un grid de dimensiones $W\times H$ donde $0<=x<W$ y $0<=y<H$ y $0 <= POM(x,y) <=1$.
+ * Ahora definimos la siguiente función indicatriz G
+ *                 $$G(x,y) = \left{\begin{itemize}
+ * \item 1, si POM(x,y) >= \theta
+ * \item 0, en cualquier otro caso\end{itemize}\right.$$
+ * Cada posición del gris donde $G(x,y) = 1$ es considerada una medición $m$ y $M_{k}$ es el
+ * conjunto de todas las mediciones posibles en un frame dado $k$.
+ * $dt = \frac{1}{fps}$
+ * $$
 */
 
 void MainWindow::test_kalman_02(){
@@ -319,10 +331,10 @@ void MainWindow::test_kalman_02(){
     this->setFlagStopTest02(false);
     cv::Mat img(500, 500, CV_8UC3);
     //cv::KalmanFilter KF(2, 1, 0); //!< Sistema
-    cv::KalmanFilter KF(4, 1, 0); //!< Sistema
+    cv::KalmanFilter KF(4, 2, 0); //!< Sistema ($\hat{x}_{k},\hat{z}_{k}$
     cv::Mat state(4, 1, CV_32F); //!< Variable que guarda el estado del sistema,i.e., (\phi_{x},\phi_{y}, \omega_{x},\omega_{y}), posición y velocidad
     cv::Mat processNoise(4, 1, CV_32F);//
-    cv::Mat measurement = cv::Mat::zeros(4, 1, CV_32F); //!< Variable que guarda las mediciones realizadas
+    cv::Mat measurement = cv::Mat::zeros(2, 1, CV_32F); //!< Variable que guarda las mediciones realizadas
     this->setCode((char)-1);
     if(!this->getFlagStopTest02()){
         //!< Inicializamos el arreglo de estados aleatoriamente, con una media y una desviación estandar
@@ -349,12 +361,13 @@ void MainWindow::test_kalman_02(){
             float R = this->getRadio();
             //double stateAngle = state.at<float>(0);
             double stateAngle = std::atan2(state.at<float>(1),state.at<float>(0));
+            std::cout << "stateAngle: " << std::setprecision(6) << stateAngle;// << std::endl;
             cv::Point statePt = calcPoint(center, R, stateAngle);
 
             cv::Mat prediction = KF.predict();
             //double predictAngle = prediction.at<float>(0);
             double predictAngle = std::atan2(prediction.at<float>(1),prediction.at<float>(0));
-            std::cout << "predictAngle: " << std::setprecision(6) << predictAngle << std::endl;
+            std::cout << " predictAngle: " << std::setprecision(6) << predictAngle;// << std::endl;
             cv::Point predictPt = calcPoint(center, R, predictAngle);
 
             cv::randn( measurement, cv::Scalar::all(0), cv::Scalar::all(KF.measurementNoiseCov.at<float>(0)));
@@ -364,6 +377,7 @@ void MainWindow::test_kalman_02(){
 
             //double measAngle = measurement.at<float>(0);
             double measAngle = std::atan2(measurement.at<float>(1),measurement.at<float>(0));
+            std::cout << " measAngle: " << std::setprecision(6) << measAngle << std::endl;
             cv::Point measPt = calcPoint(center, R, measAngle);
 
             // plot points
